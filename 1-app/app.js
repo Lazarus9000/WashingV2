@@ -96,10 +96,11 @@ function storeEvent(message) {
 				return;
 			}
 			
-			for(var ii = 0; ii < entities.length; ii++) {
-				var data = entities[ii].data;
-				var timestamp = data.published_at;
-			}
+			var key = entities[0].key;
+			var task = datastore.get(entities[0].key);
+			task = Entity.newBuilder(datastore.get(key)).set("FFT2", obj).build();
+			datastore.update(task);
+			
 		});
 	} 
    
