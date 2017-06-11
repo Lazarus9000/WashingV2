@@ -69,7 +69,9 @@ function storeEvent(message) {
 		// gc_pub_sub_id: message.id,
 		// device_id: message.attributes.device_id,
 		// event: message.attributes.event,
-		published_at: message.attributes.published_at
+		published_at: message.attributes.published_at,
+		FFT1: message.FFT1,
+		FFT2: message.FFT2
 	}
 
     // Copy the data in message.data, the Particle event data, as top-level 
@@ -85,27 +87,38 @@ function storeEvent(message) {
 	.order('published_at', {
 	  descending: true
 	});
-
+	
+	console.log('obj: ', obj);
+	//console.log('obj.FFT1: ', obj.FFT1);
+	//console.log('obj.FFT2: ', obj.FFT2);
+	
 	//LAKN egen kode
 	//Hvis FFT1 er tom og FFT2 ikke er, så skriv FFT2 til den seneste FFT1 række
-	if(obj[FFT1] = null && obj[FFT2] != null) {
+	if(   obj.FFT1 == '' 
+	   && obj.FFT2 != '') {
 		//Hent nyeste række
+		const task = ''
+		
 		datastore.runQuery(query, function(err, entities, info) {
 			if (err) {
 				console.log("database query error", err);
 				return;
 			}
+			console.log("entities =", entities);
 			
-			var key = entities[0].key;
-			var task = datastore.get(entities[0].key);
-			task = Entity.newBuilder(datastore.get(key)).set("FFT2", obj).build();
-			datastore.update(task);
-			
+			entities[0].data.FFT2 = obj.FFT2;
+			console.log("updated object: ", entities[0]);
+			datastore.update(entities[0], function(err) {
+				if(err) {
+					console.log('There was an error updating with FFT2', err);
+				}
+				console.log('FFT2 data added to newest entity', entities[0]);
+			});
 		});
 	} 
    
     //Hvis FFT1 er fyldt så skriv ny række
-	if(obj[FFT1] != null) {
+	if(obj.FFT1 != '') {
 		datastore.save({
 			key: key,
 			data: obj
