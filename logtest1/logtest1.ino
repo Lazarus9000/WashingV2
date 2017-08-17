@@ -24,6 +24,36 @@ double vImag[samples];
 
 int incomingAudio;//storage for A0 data
 
+//https://hekilledmywire.wordpress.com/2011/03/16/using-the-adc-tutorial-part-5/
+//Consider implementing adc_init and read_adc from this source, to sample fast from several sources
+
+void adc_init(void){
+ 
+ //ADCSRA |= ((1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0));    //16Mhz/128 = 125Khz the ADC reference clock
+ //ADMUX |= (1<<REFS0);                //Voltage reference from Avcc (5v)
+ //ADCSRA |= (1<<ADEN);                //Turn on ADC
+ //ADCSRA |= (1<<ADSC);                //Do an initial conversion because this one is the slowest and to ensure that everything is up and running
+}
+ 
+void read_adc(uint8_t channel){
+ ADMUX &= 0xF0;                    //Clear the older channel that was read
+ ADMUX |= channel;                //Defines the new ADC channel to be read
+ ADCSRA |= (1<<ADSC);                //Starts a new conversion
+
+ for(uint16_t i =0;i<samples;i++)
+  {
+    vReal[i] = ADCH;//double(analogRead(CHANNEL));
+    //if(samplingFrequency<=1000)
+    //  delay(delayTime);
+    //else
+    //Consider replacing delay with a check on how much time has progressed 
+    //make a new sample if millis() - timeSinceLastSample > sampleFrequency
+      delayMicroseconds(delayTime);
+  }
+  
+  //while(ADCSRA & (1<<ADSC));            //Wait until the conversion is done
+  //return ADCW;                    //Returns the ADC value of the chosen channel
+}
 
 void setup()
 {
@@ -77,16 +107,7 @@ void sample(int channel) {
   memset(vReal,0,sizeof(vReal));
   memset(vImag,0,sizeof(vImag));
   
-  for(uint16_t i =0;i<samples;i++)
-  {
-    vReal[i] = ADCH;//double(analogRead(CHANNEL));
-    //if(samplingFrequency<=1000)
-    //  delay(delayTime);
-    //else
-    //Consider replacing delay with a check on how much time has progressed 
-    //make a new sample if millis() - timeSinceLastSample > sampleFrequency
-      delayMicroseconds(delayTime);
-  }
+  read_adc(channel);
 
   //Serial.print("#S|LOGTEST|[");
   /* Print the results of the sampling according to time */
@@ -140,7 +161,7 @@ void loop()
 
   //switch analog input to other mic
   
-  delay(2000); /* Run Once */
+  delay(2000);
 
   sample(2);
 
