@@ -1,4 +1,4 @@
-#include <ArduinoJson.h>
+#include "ArduinoJson.h"
 #include "arduinoFFT.h"
 
 arduinoFFT FFT = arduinoFFT(); /* Create FFT object */
@@ -6,7 +6,7 @@ arduinoFFT FFT = arduinoFFT(); /* Create FFT object */
 These values can be changed in order to evaluate the functions
 */
 #define CHANNEL A0
-const uint16_t samples = 64;//64; //This value MUST ALWAYS be a power of 2
+const uint16_t samples = 32;//64; //This value MUST ALWAYS be a power of 2
 double samplingFrequency = 38500;
 
 unsigned int delayTime = 0;
@@ -23,6 +23,7 @@ double vImag[samples];
 #define SCL_FREQUENCY 0x02
 
 int incomingAudio;//storage for A0 data
+
 
 void setup()
 {
@@ -54,7 +55,7 @@ void setup()
   // Inside the brackets, 200 is the size of the pool in bytes.
   // If the JSON object is more complex, you need to increase that value.
   // See https://bblanchon.github.io/ArduinoJson/assistant/
-  StaticJsonBuffer<400> jsonBuffer;
+  
 
   // StaticJsonBuffer allocates memory on the stack, it can be
   // replaced by DynamicJsonBuffer which allocates in the heap.
@@ -66,15 +67,13 @@ void setup()
   // It's a reference to the JsonObject, the actual bytes are inside the
   // JsonBuffer with all the other nodes of the object tree.
   // Memory is freed when jsonBuffer goes out of scope.
-  JsonObject& root = jsonBuffer.createObject();
+  
   // It's also possible to create the array separately and add it to the
   // JsonObject but it's less efficient.
-  JsonArray& data1 = root.createNestedArray("data1");
+  
 }
 
-void loop()
-{
-
+void sample(int channel) {
   memset(vReal,0,sizeof(vReal));
   memset(vImag,0,sizeof(vImag));
   
@@ -93,7 +92,7 @@ void loop()
   /* Print the results of the sampling according to time */
   //Serial.println("Data:");
   //PrintVector(vReal, samples, SCL_TIME);
-  FFT.Windowing(vReal, samples, FFT_WIN_TYP_HAMMING, FFT_FORWARD);	/* Weigh data */
+  FFT.Windowing(vReal, samples, FFT_WIN_TYP_HAMMING, FFT_FORWARD);  /* Weigh data */
   //Serial.println("Weighed data:");
   //PrintVector(vReal, samples, SCL_TIME);
   FFT.Compute(vReal, vImag, samples, FFT_FORWARD); /* Compute FFT */
@@ -103,24 +102,51 @@ void loop()
   //PrintVector(vImag, samples, SCL_INDEX);
   FFT.ComplexToMagnitude(vReal, vImag, samples); /* Compute magnitudes */
   //Serial.println("Computed magnitudes:");
-  PrintVector(vReal, (samples >> 1), SCL_FREQUENCY);
+  //PrintVector(vReal, (samples >> 1), SCL_FREQUENCY);
+  StaticJsonBuffer<400> jsonBuffer;
+  JsonObject& root = jsonBuffer.createObject();
+  JsonArray& data1 = root.createNestedArray("data1");
+  PrintVector(vReal, samples, SCL_FREQUENCY, data1);
   double x = FFT.MajorPeak(vReal, samples, samplingFrequency);
 
   root["peakFreq"] = x;
   //Serial.print(x, 2);
   //Serial.println("]#");
+  if(channel == 1) {
+    Serial.print("{\"FFT1\":");
+    data1.printTo(Serial);
+    //Serial.print(",\"peakFreq\":");
+    //root["peakFreq"].printTo(Serial);
+    Serial.print("};{\"FFT2\":''}\n");
+  }
 
-  root.printTo(Serial);
-  // This prints:
-  // {"sensor":"gps","time":1351824120,"data":[48.756080,2.302038]}
+  if(channel == 2) {
+    Serial.print("{\"FFT1\":''};{\"FFT2\":");
+    data1.printTo(Serial);
+    //Serial.print(",\"peakFreq\":");
+    //root["peakFreq"].printTo(Serial);
+    Serial.print("}\n");
+  }
 
-  Serial.println();
+  if(channel > 2) {
+    Serial.print("Invalid channel\n");
+  }
+}
+
+void loop()
+{
+
+  sample(1);
+
+  //switch analog input to other mic
   
-  delay(100); /* Run Once */
+  delay(2000); /* Run Once */
+
+  sample(2);
 
 }
 
-void PrintVector(double *vData, uint8_t bufferSize, uint8_t scaleType)
+void PrintVector(double *vData, uint8_t bufferSize, uint8_t scaleType, JsonArray& out)
 {
   for (uint16_t i = 0; i < bufferSize; i++)
   {
@@ -130,20 +156,21 @@ void PrintVector(double *vData, uint8_t bufferSize, uint8_t scaleType)
     {
       case SCL_INDEX:
         abscissa = (i * 1.0);
-	break;
+  break;
       case SCL_TIME:
         abscissa = ((i * 1.0) / samplingFrequency);
-	break;
+  break;
       case SCL_FREQUENCY:
         abscissa = ((i * 1.0 * samplingFrequency) / samples);
-	break;
+  break;
     }
     //Serial.print(abscissa, 6);
     //Serial.print(",");
-    data.add(vData[i]);
+    out.add(vData[i]);
     //Serial.print(vData[i], 2);
     //Serial.print(",");
     //Serial.println();
   }
   //Serial.println();
 }
+
