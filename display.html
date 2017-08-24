@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<script src="https://apis.google.com/js/platform.js" async defer></script>
+<meta name="google-signin-client_id" content="392390759802-nh18m828ine379mfo13b1f2669k5qcp7.apps.googleusercontent.com">
+<meta name
+<script>
+
+</script>
+</head>
+<body>
+<div class="g-signin2" data-onsuccess="onSignIn"></div>
+<script>
+function onSignIn(googleUser) {
+	auth2 = gapi.auth2.getAuthInstance();
+	var options = new gapi.auth2.SigninOptionsBuilder(
+        {'scope': 'https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/datastore'});
+	googleUser = auth2.currentUser.get();
+	googleUser.grant(options).then(
+    function(success){
+      console.log(JSON.stringify({message: "success", value: success}));
+	  	var xhr = new XMLHttpRequest();
+		var url = "https://datastore.googleapis.com/v1/projects/particledatabase:runQuery?access_token=" + googleUser.Zi.access_token;
+		console.log(url);
+		var request = {
+		  gqlQuery: {
+			queryString: "select * from ParticleEvent"
+		  }
+		};
+		xhr.open("POST", url, true);
+		xhr.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+		xhr.send(JSON.stringify(request));
+    },
+    function(fail){
+      alert(JSON.stringify({message: "fail", value: fail}));
+    });
+	
+	//var profile = googleUser.getBasicProfile();
+	//console.log(googleUser);
+
+}
+
+//https://www.googleapis.com/auth/cloud-platform
+//https://www.googleapis.com/auth/datastore
+</script>
+
+</body>
+</html>
