@@ -34,15 +34,15 @@
     <script type="text/javascript">
       var margin = { top: 50, right: 0, bottom: 100, left: 30 },
           width = 960 - margin.left - margin.right,
-          height = 430 - margin.top - margin.bottom,
+          height = 630 - margin.top - margin.bottom,
           //resize gridsize dynamically (?)
-		  gridSize = Math.floor(width / 24),
-          legendElementWidth = gridSize*2,
+		  gridSize = Math.floor(width / 72),
+          legendElementWidth = gridSize*4,
           //Not sure what this is used for - something with color?
-		  buckets = 9,
+		  buckets = 56,
           colors = ["#ffffd9","#edf8b1","#c7e9b4","#7fcdbb","#41b6c4","#1d91c0","#225ea8","#253494","#081d58"], // alternatively colorbrewer.YlGnBu[9]
           //y axis - Mjaeh
-		  days = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+		  days = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32],
           //x-axis - mmm
 		  times = ["1a", "2a", "3a", "4a", "5a", "6a", "7a", "8a", "9a", "10a", "11a", "12a", "1p", "2p", "3p", "4p", "5p", "6p", "7p", "8p", "9p", "10p", "11p", "12p"];
           //datasets = ["data.tsv", "data2.tsv"];
@@ -67,7 +67,7 @@
           .data(times)
           .enter().append("text")
             .text(function(d) { return d; })
-            .attr("x", function(d, i) { return i * gridSize; })
+            .attr("x", function(d, i) { return i * gridSize*2; })
             .attr("y", 0)
             .style("text-anchor", "middle")
             .attr("transform", "translate(" + gridSize / 2 + ", -6)")
@@ -88,28 +88,39 @@
 		console.log(d3.max(input, function (d) { return d.value; }));
 		//console.log(d.hour);
 		//console.log(d.value);
+		
+		//creates color scale
           var colorScale = d3.scale.quantile()
               .domain([0, buckets - 1, d3.max(input, function (d) { return d.value; })])
               .range(colors);
-
+		
+		//selects card
           var cards = svg.selectAll(".hour")
               .data(input, function(d) {return d.day+':'+d.hour;});
 
+			  //?
           cards.append("title");
 
+		  //Add new data point
           cards.enter().append("rect")
-              .attr("x", function(d) { return (d.hour - 1) * gridSize; })
+              .attr("x", function(d) { return (d.hour - 1) * gridSize*2; }) //position in grid
               .attr("y", function(d) { return (d.day - 1) * gridSize; })
-              .attr("rx", 4)
-              .attr("ry", 4)
-              .attr("class", "hour bordered")
-              .attr("width", gridSize)
+              //.attr("rx", 2) //rounding of recangle, not needed for our uses
+              //.attr("ry", 2)
+              //.attr("class", "hour bordered") //css class I guess
+			  .attr("class", "hour") //css class I guess
+              .attr("width", gridSize*2) 
               .attr("height", gridSize)
-              .style("fill", colors[0]);
+              .style("fill", colors[0]); //Initial color
 
+			  //Animates color change
           cards.transition().duration(1000)
-              .style("fill", function(d) { return colorScale(d.value); });
+              .style("fill", function(d) { return colorScale(d.value); })
+			  .attr("x", function(d) { return (d.hour - 1) * gridSize*2; }) //position in grid
+              .attr("y", function(d) { return (d.day - 1) * gridSize; });
+              
 
+			//?
           cards.select("title").text(function(d) { return d.value; });
           
           cards.exit().remove();
@@ -124,14 +135,14 @@
             .attr("x", function(d, i) { return legendElementWidth * i; })
             .attr("y", height)
             .attr("width", legendElementWidth)
-            .attr("height", gridSize / 2)
+            .attr("height", gridSize)
             .style("fill", function(d, i) { return colors[i]; });
 
           legend.append("text")
             .attr("class", "mono")
             .text(function(d) { return "≥ " + Math.round(d); })
             .attr("x", function(d, i) { return legendElementWidth * i; })
-            .attr("y", height + gridSize);
+            .attr("y", height + gridSize*2);
 
           legend.exit().remove();
 
@@ -144,9 +155,10 @@
 		hour: [1, 2, 3, 1, 2, 3],
 		value: [1, 2, 3, 4, 5, 6]
 	  };
-	  data2 = [{
+	  data2 = [];
+	  /*data2 = [{
 		day: 1, 
-		hour: 1, 
+		hour: 2, 
 		value:5
 		},
 		{
@@ -163,8 +175,8 @@
 		day: 4, 
 		hour: 1, 
 		value:1
-		}];
-	  heatmapChart(data2);
+		}];*/
+	  //heatmapChart(data2);
       //heatmapChart(datasets[0]);
       
 	  
@@ -204,18 +216,34 @@ function onSignIn(googleUser) {
 			if (xhr.readyState == 4) {
 				console.log(JSON.parse(readBody(xhr)));
 				var datastore = JSON.parse(readBody(xhr));
+				entityLen = datastore.batch.entityResults.length;
+				for(var i = 0; i < entityLen; i++) {
+					valueLen = datastore.batch.entityResults[i].entity.properties.FFT1.arrayValue.values.length;
+					for(var j = 0; j < valueLen; j++) {
+						value = datastore.batch.entityResults[i].entity.properties.FFT1.arrayValue.values[j].integerValue;
+						formatForHeatmap(value, j, i);
+					}
+				}
+				//datastore.batch.entityResults[0].entity.properties.FFT1.arrayValue.values.forEach(formatForHeatmap);
+				
+				/*var newpoint = { 
+								day: 3,
+								value: datastore.batch.entityResults[0].entity.properties.FFT1.arrayValue.values[0].integerValue,
+								hour: 3
+								}
+				data2.push(newpoint);				
 				data2[0].day = 1;
-				data2[0].value = datastore.batch.entityResults[0].entity.properties.FFT1.arrayValue.values[0];
+				data2[0].value = datastore.batch.entityResults[0].entity.properties.FFT1.arrayValue.values[0].integerValue;
 				data2[0].hour = 1;
 				
 				data2[1].day = 2;
-				data2[1].value = datastore.batch.entityResults[0].entity.properties.FFT1.arrayValue.values[1];
+				data2[1].value = datastore.batch.entityResults[0].entity.properties.FFT1.arrayValue.values[1].integerValue;
 				data2[1].hour = 1;
 				
 				data2[2].day = 3;
-				data2[2].value = datastore.batch.entityResults[0].entity.properties.FFT1.arrayValue.values[2];
+				data2[2].value = datastore.batch.entityResults[0].entity.properties.FFT1.arrayValue.values[2].integerValue;
 				data2[2].hour = 1;
-				
+				*/
 				//console.log(data2);
 				heatmapChart(data2);
 			}
@@ -238,8 +266,19 @@ function onSignIn(googleUser) {
 	
 	//var profile = googleUser.getBasicProfile();
 	//console.log(googleUser);
-
+    
+	
 }
+
+function formatForHeatmap(value, x, y) {
+		var newpoint = { 
+								day: x+1,
+								value: value,
+								hour: y+1
+								}
+		console.log(newpoint);
+		data2.push(newpoint);
+	}
 
 //https://www.googleapis.com/auth/cloud-platform
 //https://www.googleapis.com/auth/datastore
