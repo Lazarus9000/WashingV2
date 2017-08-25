@@ -150,18 +150,18 @@
 		value:5
 		},
 		{
-		day: 1, 
-		hour: 2, 
+		day: 2, 
+		hour: 1, 
 		value:9
 		},
 		{
-		day: 1, 
-		hour: 3, 
+		day: 3, 
+		hour: 1, 
 		value:2
 		},
 		{
-		day: 1, 
-		hour: 4, 
+		day: 4, 
+		hour: 1, 
 		value:1
 		}];
 	  heatmapChart(data2);
@@ -179,8 +179,6 @@
         .on("click", function(d) {
           heatmapChart(d);
         });*/
-    </script>
-<script>
 function readBody(xhr) {
     var data;
     if (!xhr.responseType || xhr.responseType === "text") {
@@ -205,6 +203,21 @@ function onSignIn(googleUser) {
 		xhr.onreadystatechange = function() {
 			if (xhr.readyState == 4) {
 				console.log(JSON.parse(readBody(xhr)));
+				var datastore = JSON.parse(readBody(xhr));
+				data2[0].day = 1;
+				data2[0].value = datastore.batch.entityResults[0].entity.properties.FFT1.arrayValue.values[0];
+				data2[0].hour = 1;
+				
+				data2[1].day = 2;
+				data2[1].value = datastore.batch.entityResults[0].entity.properties.FFT1.arrayValue.values[1];
+				data2[1].hour = 1;
+				
+				data2[2].day = 3;
+				data2[2].value = datastore.batch.entityResults[0].entity.properties.FFT1.arrayValue.values[2];
+				data2[2].hour = 1;
+				
+				//console.log(data2);
+				heatmapChart(data2);
 			}
 		}
 		var url = "https://datastore.googleapis.com/v1/projects/particledatabase:runQuery?access_token=" + googleUser.Zi.access_token;
