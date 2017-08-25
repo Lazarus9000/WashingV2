@@ -1,4 +1,7 @@
+//Used to format data
 #include "ArduinoJson.h"
+
+//See https://github.com/kosme/arduinoFFT and https://github.com/kosme/arduinoFFT/blob/master/Examples/FFT_01/FFT_01.ino
 #include "arduinoFFT.h"
 
 arduinoFFT FFT = arduinoFFT(); /* Create FFT object */
