@@ -141,11 +141,11 @@ void sample(int channel) {
     data1.printTo(Serial);
     //Serial.print(",\"peakFreq\":");
     //root["peakFreq"].printTo(Serial);
-    Serial.print("};{\"FFT2\":''}\n");
+    Serial.print(",\"FFT2\":\"\"}\n");
   }
 
   if(channel == 2) {
-    Serial.print("{\"FFT1\":''};{\"FFT2\":");
+    Serial.print("{\"FFT1\":\"\",\"FFT2\":");
     data1.printTo(Serial);
     //Serial.print(",\"peakFreq\":");
     //root["peakFreq"].printTo(Serial);
